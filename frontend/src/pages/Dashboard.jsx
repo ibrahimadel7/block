@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { backend } from "../utils/backend";
 import { HttpAgent } from "@dfinity/agent";
+import Navbar from "../components/Navbar";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -33,7 +34,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div style={{ background: '#f7f9fc', minHeight: '100vh', paddingTop: 48 }}>
+    <div style={{ background: '#f7f9fc', minHeight: '100vh', width: '100vw', paddingTop: 48 }}>
+      <Navbar />
       <div style={{ maxWidth: 900, margin: '0 auto', background: '#fff', borderRadius: 16, padding: 40, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: 32 }}>Dashboard</h1>
         <div style={{ display: 'flex', gap: 32 }}>

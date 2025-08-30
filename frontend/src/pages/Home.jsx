@@ -1,15 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import Navbar from "../components/Navbar";
 
 export default function Home() {
   return (
-    <div style={{ background: '#eaf0fa', minHeight: '100vh' }}>
-      <nav style={{ background: '#4a90e2', padding: '16px 32px', borderRadius: '0 0 16px 16px', display: 'flex', justifyContent: 'flex-end', gap: 32 }}>
-        <Link to="/" style={{ color: '#fff', fontWeight: 500, marginRight: 24 }}>Home</Link>
-        <Link to="/tests" style={{ color: '#fff', fontWeight: 500, marginRight: 24 }}>Tests</Link>
-        <Link to="/dashboard" style={{ color: '#fff', fontWeight: 500, marginRight: 24 }}>Dashboard</Link>
-        <Link to="#" style={{ color: '#fff', fontWeight: 500 }}>Profile</Link>
-      </nav>
+    <div style={{ background: '#eaf0fa', minHeight: '100vh', width: '100vw' }}>
+      <Navbar />
       <div style={{ maxWidth: 600, margin: '48px auto', background: '#4a90e2', borderRadius: 24, padding: 40, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <h1 style={{ fontSize: '2.8rem', fontWeight: 700, marginBottom: 16 }}>AcademyBlock</h1>

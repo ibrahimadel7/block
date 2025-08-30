@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ICP Exams Canister Tester</title>
+  <style>
+    :root { --bg:#0b1020; --panel:#121831; --muted:#8aa0ff; --text:#e7ecff; --danger:#ff6b6b; --ok:#4ade80; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial; background:linear-gradient(180deg,#0b1020,#0d1230 40%,#0b1020); color:var(--text)}
+    header{padding:20px 16px;border-bottom:1px solid #263056;background:rgba(18,24,49,.6);backdrop-filter: blur(8px);position:sticky;top:0;z-index:10}
+    h1{margin:0;font-size:20px;letter-spacing:.2px}
+    main{max-width:1100px;margin:18px auto;padding:0 16px 48px}
+    .grid{display:grid;gap:14px}
+    @media(min-width:900px){.grid{grid-template-columns: 320px 1fr}}
+    .card{background:var(--panel);border:1px solid #243059;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .card h2{font-size:14px;text-transform:uppercase;letter-spacing:.12em;color:#9fb1ff;margin:0 0 8px}
+    .card .body{padding:14px}
+    label{display:block;font-size:12px;color:#c9d3ff;margin:12px 0 6px}
+    input, select, textarea, button{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #2a3763;background:#0e1530;color:var(--text);font:inherit}
+    textarea{min-height:90px;resize:vertical}
+    button{cursor:pointer;transition:.15s;}
+    button:hover{transform:translateY(-1px)}
+    .row{display:flex;gap:8px}
+    .row > *{flex:1}
+    .muted{color:#8fa2ff;font-size:12px}
+    .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #2a3763;background:#0d1638;color:#cfe0ff;font-size:12px}
+    .log{height:280px;background:#060a1a;border:1px solid #1f294f;border-radius:12px;padding:10px;overflow:auto;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-size:12px;white-space:pre-wrap}
+    .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+    .ok{border-color:#2c6f46;background:#0b2617}
+    .danger{border-color:#5b2a33;background:#220b10}
+    .flex{display:flex;gap:8px;align-items:center}
+    .small{font-size:12px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ICP Exams Canister Tester <span class="badge" id="principal-badge">principal: anonymous</span></h1>
+  </header>
+
+  <main class="grid">
+    <!-- LEFT: Connection & Forms -->
+    <section class="grid" style="gap:14px">
+      <div class="card">
+        <div class="body">
+          <h2>Connection</h2>
+          <label>Canister ID</label>
+          <input id="canisterId" placeholder="e.g. abcde-f...-cai" />
+          <label>Host</label>
+          <input id="host" placeholder="http://127.0.0.1:4943 (dfx) or https://ic0.app" />
+          <div class="row" style="margin-top:10px">
+            <button id="btnInit">Initialize Agent</button>
+            <button id="btnRootKey" title="Only for local dfx">Fetch Root Key</button>
+          </div>
+          <p class="muted">Tip: For local testing use host <code>http://127.0.0.1:4943</code>. You can call updates anonymously.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="body">
+          <h2>User</h2>
+          <div class="actions">
+            <button id="btnRegister">Register User</button>
+            <button id="btnGetMe">Get My User</button>
+            <button id="btnPromoteSelf">Promote Me to Admin</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="body">
+          <h2>Exams</h2>
+          <div class="row">
+            <button id="btnCreateTestData">Create Test Data</button>
+            <button id="btnListExams">List Exams</button>
+          </div>
+          <label>Exam ID</label>
+          <input id="examId" type="number" placeholder="0" />
+          <div class="row">
+            <button id="btnGetExam">Get Exam</button>
+            <button id="btnDeleteExam" class="danger">Delete Exam</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="body">
+          <h2>Take Exam</h2>
+          <label>Answers (JSON array of strings)</label>
+          <textarea id="answersJson">["Paris","4"]</textarea>
+          <button id="btnSubmitAnswers" class="ok">Submit Answers</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="body">
+          <h2>Certificates</h2>
+          <div class="row">
+            <button id="btnClaimCertificate" class="ok">Claim Certificate</button>
+            <button id="btnGetMyCertificates">Get My Certificates</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="body">
+          <h2>Create Exam (Admin)</h2>
+          <label>Title</label>
+          <input id="newExamTitle" placeholder="My New Exam" />
+          <label>Questions (JSON)</label>
+          <textarea id="newExamQuestions" placeholder='[{"text":"Q?","answers":["A","B"],"correct_choice":0,"level":{"Beginner":null},"score":10}]'></textarea>
+          <button id="btnCreateExam">Create Exam</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Log -->
+    <section>
+      <div class="card" style="height:100%">
+        <div class="body">
+          <h2>Log</h2>
+          <div id="log" class="log"></div>
+          <div class="row" style="margin-top:8px">
+            <button id="btnClearLog">Clear</button>
+            <button id="btnCopyLog">Copy</button>
+          </div>
+          <p class="muted small">All calls print both the raw variant result and a simplified helper extraction.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    // Import ESM builds from a CDN (works in a single HTML file)
+    import { HttpAgent, Actor, AnonymousIdentity } from 'https://cdn.jsdelivr.net/npm/@dfinity/agent@1.2.3/+esm';
+    import { IDL } from 'https://cdn.jsdelivr.net/npm/@dfinity/candid@8.0.1/+esm';
+
+    // ------------------ Candid IDL Factory ------------------
+    const idlFactory = ({ IDL }) => {
+      const Role = IDL.Variant({ 'Student': IDL.Null, 'Teacher': IDL.Null, 'Admin': IDL.Null });
+      const Level = IDL.Variant({ 'Beginner': IDL.Null, 'Intermediate': IDL.Null, 'Advanced': IDL.Null });
+      const Question = IDL.Record({
+        'text': IDL.Text,
+        'answers': IDL.Vec(IDL.Text),
+        'correct_choice': IDL.Nat8,
+        'level': Level,
+        'score': IDL.Nat8,
+      });
+      const Exam = IDL.Record({ 'id': IDL.Nat64, 'title': IDL.Text, 'questions': IDL.Vec(Question) });
+      const Certificate = IDL.Record({
+        'id': IDL.Nat64,
+        'exam_id': IDL.Nat64,
+        'user_principal': IDL.Principal,
+        'score': IDL.Nat8,
+        'awarded_at': IDL.Nat64,
+      });
+      const User = IDL.Record({
+        'principal': IDL.Principal,
+        'role': Role,
+        'exams_taken': IDL.Vec(IDL.Nat64),
+        'certificates': IDL.Vec(IDL.Nat64),
+      });
+      const ResultVoid = IDL.Variant({ 'Ok': IDL.Null, 'Err': IDL.Text });
+      const ResultText = IDL.Variant({ 'Ok': IDL.Text, 'Err': IDL.Text });
+      const ResultUser = IDL.Variant({ 'Ok': User, 'Err': IDL.Text });
+      const ResultExam = IDL.Variant({ 'Ok': Exam, 'Err': IDL.Text });
+      const ResultNat64 = IDL.Variant({ 'Ok': IDL.Nat64, 'Err': IDL.Text });
+      const ResultNat8 = IDL.Variant({ 'Ok': IDL.Nat8, 'Err': IDL.Text });
+
+      return IDL.Service({
+        'register_user': IDL.Func([], [], []),
+        'promote_to_admin': IDL.Func([IDL.Principal], [ResultVoid], []),
+        'get_user': IDL.Func([IDL.Principal], [ResultUser], ['query']),
+        'list_exams': IDL.Func([], [IDL.Vec(Exam)], ['query']),
+        'get_exam': IDL.Func([IDL.Nat64], [ResultExam], ['query']),
+        'submit_answers': IDL.Func([IDL.Nat64, IDL.Vec(IDL.Text)], [ResultNat8], []),
+        'get_result': IDL.Func([IDL.Nat64, IDL.Principal], [ResultText], ['query']),
+        'claim_certificate': IDL.Func([IDL.Nat64], [ResultNat64], []),
+        'get_certificates': IDL.Func([IDL.Principal], [IDL.Vec(Certificate)], ['query']),
+        'create_exam': IDL.Func([IDL.Text, IDL.Vec(Question)], [ResultNat64], []),
+        'delete_exam': IDL.Func([IDL.Nat64], [ResultVoid], []),
+        'create_test_data': IDL.Func([], [], []),
+      });
+    };
+
+    // ------------------ Simple UI helpers ------------------
+    const $ = sel => document.querySelector(sel);
+    const logEl = $('#log');
+    function log(msg, obj){
+      const time = new Date().toLocaleTimeString();
+      const line = `[${time}] ${msg}`;
+      if(obj!==undefined){
+        logEl.textContent += `${line}\n${JSON.stringify(obj, null, 2)}\n\n`;
+      } else {
+        logEl.textContent += line + "\n";
+      }
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    $('#btnClearLog').onclick = ()=> logEl.textContent = '';
+    $('#btnCopyLog').onclick = async ()=>{
+      await navigator.clipboard.writeText(logEl.textContent);
+      log('Copied log to clipboard');
+    };
+
+    // ------------------ Agent / Actor ------------------
+    let agent = null;
+    let actor = null;
+    let canisterIdCurrent = null;
+
+    async function initAgent(){
+      const host = $('#host').value.trim() || 'http://127.0.0.1:4943';
+      canisterIdCurrent = $('#canisterId').value.trim();
+      if(!canisterIdCurrent){
+        alert('Enter a canister ID');
+        return;
+      }
+      agent = new HttpAgent({ host, identity: new AnonymousIdentity() });
+      // For local development, fetch the root key
+      if(host.includes('127.0.0.1') || host.includes('localhost')){
+        try{ await agent.fetchRootKey(); log('Fetched root key for local replica'); }catch(e){ log('Failed to fetch root key', e); }
+      }
+      actor = Actor.createActor(idlFactory, { agent, canisterId: canisterIdCurrent });
+      log('Actor initialized', { host, canisterId: canisterIdCurrent });
+      $('#principal-badge').textContent = 'principal: anonymous';
+    }
+
+    async function fetchRootKey(){
+      if(!agent){ log('Initialize agent first'); return; }
+      try{ await agent.fetchRootKey(); log('Root key fetched'); }catch(e){ log('Root key error', e); }
+    }
+
+    $('#btnInit').onclick = initAgent;
+    $('#btnRootKey').onclick = fetchRootKey;
+
+    // ------------------ Wire buttons to canister ------------------
+    function ensure(){ if(!actor) throw new Error('Initialize agent/actor first'); }
+
+    $('#btnRegister').onclick = async ()=>{
+      try{ ensure(); await actor.register_user(); log('register_user: Ok'); }catch(e){ log('register_user error', e); }
+    };
+
+    $('#btnGetMe').onclick = async ()=>{
+      try{ ensure();
+        // anonymous principal is 2vxsx-fae (agent can't read it directly here), just call get_user with anonymous principal which candid cannot derive
+        // Instead, call list_exams then try promote_to_admin to see variant. For demo we will ask server for user by caller principal isn't exposed.
+        // We'll expose a prompt to paste your principal if you have it. For anonymous, server stores the anonymous principal when you registered.
+        const principalText = prompt('Enter your principal text (use 2vxsx-fae for anonymous, or your actual principal)','2vxsx-fae');
+        if(!principalText) return;
+        const principal = Principal.fromText(principalText);
+        const res = await actor.get_user(principal);
+        log('get_user result (raw variant)', res);
+        log('get_user simplified', unwrap(res));
+      }catch(e){ log('get_user error', e); }
+    };
+
+    $('#btnPromoteSelf').onclick = async ()=>{
+      try{ ensure();
+        const principalText = prompt('Enter target principal to promote (e.g., your own)','2vxsx-fae');
+        if(!principalText) return;
+        const principal = Principal.fromText(principalText);
+        const res = await actor.promote_to_admin(principal);
+        log('promote_to_admin (raw)', res);
+        log('promote_to_admin simplified', unwrapVoid(res));
+      }catch(e){ log('promote_to_admin error', e); }
+    };
+
+    $('#btnCreateTestData').onclick = async ()=>{
+      try{ ensure(); await actor.create_test_data(); log('create_test_data: Ok'); }catch(e){ log('create_test_data error', e); }
+    };
+
+    $('#btnListExams').onclick = async ()=>{
+      try{ ensure(); const res = await actor.list_exams(); log('list_exams', res); }catch(e){ log('list_exams error', e); }
+    };
+
+    $('#btnGetExam').onclick = async ()=>{
+      try{ ensure(); const id = BigInt($('#examId').value||0); const res = await actor.get_exam(id); log('get_exam (raw)', res); log('get_exam simplified', unwrap(res)); }catch(e){ log('get_exam error', e); }
+    };
+
+    $('#btnDeleteExam').onclick = async ()=>{
+      try{ ensure(); const id = BigInt($('#examId').value||0); const res = await actor.delete_exam(id); log('delete_exam (raw)', res); log('delete_exam simplified', unwrapVoid(res)); }catch(e){ log('delete_exam error', e); }
+    };
+
+    $('#btnSubmitAnswers').onclick = async ()=>{
+      try{ ensure(); const id = BigInt($('#examId').value||0); const answers = JSON.parse($('#answersJson').value||'[]'); const res = await actor.submit_answers(id, answers); log('submit_answers (raw)', res); log('submit_answers simplified', unwrap(res)); }catch(e){ log('submit_answers error', e); }
+    };
+
+    $('#btnClaimCertificate').onclick = async ()=>{
+      try{ ensure(); const id = BigInt($('#examId').value||0); const res = await actor.claim_certificate(id); log('claim_certificate (raw)', res); log('claim_certificate simplified', unwrap(res)); }catch(e){ log('claim_certificate error', e); }
+    };
+
+    $('#btnGetMyCertificates').onclick = async ()=>{
+      try{ ensure(); const principalText = prompt('Enter principal to fetch certificates for','2vxsx-fae'); if(!principalText) return; const principal = Principal.fromText(principalText); const res = await actor.get_certificates(principal); log('get_certificates', res); }catch(e){ log('get_certificates error', e); }
+    };
+
+    $('#btnCreateExam').onclick = async ()=>{
+      try{ ensure(); const title = $('#newExamTitle').value || 'Untitled'; const qJson = $('#newExamQuestions').value.trim(); if(!qJson){ alert('Provide questions JSON'); return; }
+        // Expect level as a variant object, e.g. {"Beginner":null}
+        const questions = JSON.parse(qJson);
+        const res = await actor.create_exam(title, questions);
+        log('create_exam (raw)', res);
+        log('create_exam simplified', unwrap(res));
+      }catch(e){ log('create_exam error', e); }
+    };
+
+    // ------------------ Principal helper ------------------
+    // Lightweight Principal implementation (tiny shim) so we don't need @dfinity/principal package separately
+    class Principal {
+      constructor(bytes){ this._bytes = bytes; }
+      static fromText(t){
+        // Minimal parser via @dfinity/agent API (exposes Principal) if available
+        if (window.ic && window.ic.plug && window.ic.plug.principalId){
+          // Not used here; keeping for future extension
+        }
+        // Import dynamically from agent (it re-exports Principal)
+        return (Actor && Actor.agentOf) ? (globalThis.windowPrincipalFromText ??= (awaitPrincipalFromText()))(t) : null;
+      }
+    }
+    // Build a utility that reuses agent's Principal at runtime
+    let realPrincipal = null;
+    async function awaitPrincipalFromText(){
+      if(realPrincipal) return realPrincipal.fromText.bind(realPrincipal);
+      const mod = await import('https://cdn.jsdelivr.net/npm/@dfinity/principal@1.2.3/+esm');
+      realPrincipal = mod.Principal;
+      return realPrincipal.fromText.bind(realPrincipal);
+    }
+
+    // unwrap helpers for candid Result
+    function unwrap(variant){ return 'Ok' in variant ? variant.Ok : { error: variant.Err }; }
+    function unwrapVoid(variant){ return 'Ok' in variant ? 'Ok' : { error: variant.Err }; }
+
+    // Prefill convenient defaults for local dev
+    $('#host').value = 'http://127.0.0.1:4943';
+    $('#newExamQuestions').value = JSON.stringify([
+      { text: 'What is the capital of France?', answers: ['Paris','London','Berlin'], correct_choice: 0, level: { Beginner: null }, score: 10 },
+      { text: '2 + 2 = ?', answers: ['3','4','5'], correct_choice: 1, level: { Beginner: null }, score: 10 }
+    ], null, 2);
+
+    // Small UX nicety: keep canisterId in localStorage
+    const key = 'icp-exams-canister-id';
+    const saved = localStorage.getItem(key);
+    if(saved) $('#canisterId').value = saved;
+    $('#canisterId').addEventListener('change', ()=> localStorage.setItem(key, $('#canisterId').value.trim()));
+  </script>
+</body>
+</html>

@@ -3,6 +3,7 @@ use ic_cdk::{caller, trap};
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
+// Use export_candid macro from ic_cdk
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, CandidType)]
 struct IDCounters {
@@ -169,7 +170,7 @@ fn submit_answers(exam_id: u64, answers: Vec<String>) -> Result<u8, String> {
 
 // Get exam result for a user
 #[ic_cdk::query]
-fn get_result(exam_id: u64, user_principal: Principal) -> Result<String, String> {
+fn get_result(_exam_id: u64, _user_principal: Principal) -> Result<String, String> {
     // For simplicity, we'll just return a string result
     // In a real implementation, you might want to store results properly
     Ok("Passed with 85%".to_string())
